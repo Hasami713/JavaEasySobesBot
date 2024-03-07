@@ -2,6 +2,7 @@ package com.example.javaeasysobes.service;
 
 import com.example.javaeasysobes.config.BotConfig;
 import com.example.javaeasysobes.models.User;
+import com.example.javaeasysobes.repo.QuestionRepository;
 import com.example.javaeasysobes.repo.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +17,10 @@ import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Slf4j
 @Component
@@ -26,6 +28,10 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private QuestionRepository questionRepository;
+
     final BotConfig config;
 
     static final String HELP_TEXT = "This bot is created for fucking your mother!\n\n"
@@ -62,18 +68,34 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 case "/help":
                     sendMessage(chatId, HELP_TEXT);
                     break;
+                case "/question":
+                    //sendQuestion(chatId, questionRepository);
+                    break;
+                case "/new":
+                    newQuestion(chatId, update.getMessage().getText());
+                    //newAnswer(update.getMessage().getText());
                 default:
                     sendMessage(chatId,"Sorry, there is nothing");
             }
         }
     }
 
+    private void newQuestion(long chatId, String text) {
+        sendMessage(chatId, text);
+    }
+
+//    private void sendQuestion(long chatId, QuestionRepository questionRepository) {
+//        int count = userCounter();
+//        Random random = new Random();
+//        int i = random.nextInt(count)
+//    }
+
+
     private void registerUser(Message message) {
         if (userRepository.findById(message.getChatId()).isEmpty()) {
             Long chatId = message.getChatId();
             Chat chat = message.getChat();
             User user = new User();
-
             user.setId(chatId);
             user.setFirstName(chat.getFirstName());
             user.setLastName(chat.getLastName());
@@ -110,5 +132,27 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             log.error("Error occured:" + e.getMessage());
         }
+    }
+
+    private int userCounter() {
+        String url = "jdbc:postgresql://localhost:5432/postgres";
+        String user = "postgres";
+        String password = "1";
+        try (Connection connection = DriverManager.getConnection(url, user, password)) {
+            Statement statement = connection.createStatement();
+
+            String query = "SELECT COUNT(*) AS count FROM user_table";
+
+            ResultSet resultSet = statement.executeQuery(query);
+
+            if (resultSet.next()) {
+                int count = resultSet.getInt("count");
+                return count;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
     }
 }

@@ -12,12 +12,11 @@ import lombok.NoArgsConstructor;
 import java.sql.Timestamp;
 @Builder
 @AllArgsConstructor
-@Entity
+@Entity(name = "user_table")
 @NoArgsConstructor
 @Data
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String firstName;
     private String lastName;
