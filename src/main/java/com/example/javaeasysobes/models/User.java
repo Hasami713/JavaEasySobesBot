@@ -1,15 +1,14 @@
 package com.example.javaeasysobes.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.example.javaeasysobes.states.ChatState;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.sql.Timestamp;
+
 @Builder
 @AllArgsConstructor
 @Entity(name = "user_table")
@@ -24,6 +23,8 @@ public class User {
     private String userName;
     private Timestamp registeredAt;
 
+    @Enumerated(EnumType.STRING)
+    private ChatState state;
     @Override
     public String toString() {
         return "User{" +

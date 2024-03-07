@@ -4,9 +4,11 @@ import com.example.javaeasysobes.config.BotConfig;
 import com.example.javaeasysobes.models.User;
 import com.example.javaeasysobes.repo.QuestionRepository;
 import com.example.javaeasysobes.repo.UserRepository;
+import com.example.javaeasysobes.states.ChatState;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -15,11 +17,15 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Slf4j
@@ -61,27 +67,37 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
             switch (messageText) {
+                case "Start":
+                    registerUser(update.getMessage());
+                    startCommandRecieved(chatId, update.getMessage().getChat().getFirstName());
+                    break;
                 case "/start":
                     registerUser(update.getMessage());
                     startCommandRecieved(chatId, update.getMessage().getChat().getFirstName());
                     break;
-                case "/help":
+                case "Help":
                     sendMessage(chatId, HELP_TEXT);
                     break;
                 case "/question":
                     //sendQuestion(chatId, questionRepository);
                     break;
                 case "/new":
-                    newQuestion(chatId, update.getMessage().getText());
+                    newQuestion(chatId, "Тут надо поменять текст");
                     //newAnswer(update.getMessage().getText());
+                    break;
                 default:
                     sendMessage(chatId,"Sorry, there is nothing");
             }
         }
     }
 
-    private void newQuestion(long chatId, String text) {
-        sendMessage(chatId, text);
+    private void newQuestion(long chatId, String textMessage) {
+//        userRepository.updateStateByChatId(chatId, ChatState.NEW_QUESTION);
+//        Optional<User> userOptional = userRepository.findById(chatId);
+//        sendMessage(chatId, textMessage);
+//        if (userOptional.get().getState() == ChatState.NEW_QUESTION){
+//            sendMessage(chatId, "dsafhjdkjfhd");
+//        }
     }
 
 //    private void sendQuestion(long chatId, QuestionRepository questionRepository) {
@@ -101,10 +117,28 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
             user.setLastName(chat.getLastName());
             user.setUserName(chat.getUserName());
             user.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
+            user.setState(ChatState.DEFAULT);
             userRepository.save(user);
             log.info("User saved: " + user);
         }
     }
+
+
+    private void sendMessage(long chatId, String textToSend) {
+        SendMessage message = new SendMessage();
+
+        message.setChatId(String.valueOf((chatId)));
+        message.setText(textToSend);
+
+        printKeyboard(chatId, message);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error occured:" + e.getMessage());
+        }
+    }
+
 
     @Override
     public String getBotUsername() {
@@ -122,15 +156,28 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         log.info("Replied to user:" + name);
     }
 
-    private void sendMessage(long chatId, String textToSend) {
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf((chatId)));
-        message.setText(textToSend);
+    private void printKeyboard(long chatId, SendMessage message) {
 
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            log.error("Error occured:" + e.getMessage());
+        Optional<User> userOptional = userRepository.findById(chatId);
+        if (userOptional.get().getState() == ChatState.DEFAULT) {
+            ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+            List<KeyboardRow> keyboardRows = new ArrayList<>();
+
+            KeyboardRow row = new KeyboardRow();
+            row.add("Start");
+            keyboardRows.add(row);
+
+            row = new KeyboardRow();
+            row.add("New");
+            keyboardRows.add(row);
+
+            row = new KeyboardRow();
+            row.add("Help");
+            keyboardRows.add(row);
+
+            keyboardMarkup.setKeyboard(keyboardRows);
+
+            message.setReplyMarkup(keyboardMarkup);
         }
     }
 
