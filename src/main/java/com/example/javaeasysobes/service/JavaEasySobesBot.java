@@ -1,6 +1,7 @@
 package com.example.javaeasysobes.service;
 
 import com.example.javaeasysobes.config.BotConfig;
+import com.example.javaeasysobes.models.Question;
 import com.example.javaeasysobes.models.User;
 import com.example.javaeasysobes.repo.QuestionRepository;
 import com.example.javaeasysobes.repo.UserRepository;
@@ -42,10 +43,10 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
     final BotConfig config;
 
     static final String HELP_TEXT = "This bot is created for fucking your mother!\n\n"
-             +"There tou can see otner command of this bot, bitch:\n\n"
-            +"Type /start to welcome message\n\n"
-            +"Type /mydata to see data stored about yourself\n\n"
-            +"Type /help to see this messge again, little idiot!";
+            + "There tou can see otner command of this bot, bitch:\n\n"
+            + "Type /start to welcome message\n\n"
+            + "Type /mydata to see data stored about yourself\n\n"
+            + "Type /help to see this messge again, little idiot!";
 
     public JavaEasySobesBot(BotConfig config) {
         this.config = config;
@@ -57,8 +58,8 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         listOfCommand.add(new BotCommand("/settings", "change your settings"));
         try {
             this.execute(new SetMyCommands(listOfCommand, new BotCommandScopeDefault(), null));
-        } catch (TelegramApiException e){
-            log.error("Error setting bot's command list: "  + e.getMessage());
+        } catch (TelegramApiException e) {
+            log.error("Error setting bot's command list: " + e.getMessage());
         }
     }
 
@@ -67,38 +68,68 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
-            switch (messageText) {
-                case "Start":
-                    registerUser(update.getMessage());
-                    startCommandRecieved(chatId, update.getMessage().getChat().getFirstName());
-                    break;
-                case "/start":
-                    registerUser(update.getMessage());
-                    startCommandRecieved(chatId, update.getMessage().getChat().getFirstName());
-                    break;
-                case "Help":
-                    sendMessage(chatId, HELP_TEXT);
-                    break;
-                case "New":
-                    newQuestion(chatId);
-                    //newAnswer(update.getMessage().getText());
-                    break;
-                case "/question":
-                    //sendQuestion(chatId, questionRepository);
-                    break;
-                default:
-                    sendMessage(chatId,"Sorry, there is nothing");
+            registerUser(update.getMessage());
+            Optional<User> userOptional = userRepository.findById(chatId);
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+                ChatState state = user.getState();
+
+                switch (state) {
+                    case DEFAULT:
+                        handleDefaultState(chatId, messageText, update);
+                        break;
+                    case NEW_QUESTION:
+                        // Логика для обработки сообщений при создании нового вопроса
+                        handleNewQuestionState(chatId, messageText, update);
+                        break;
+                    // Другие состояния могут быть добавлены здесь
+                    default:
+                        // Если состояние неизвестно или не обработано
+                        sendMessage(chatId, "Unknown state");
+                        break;
+                }
+            } else {
+                sendMessage(chatId, "User not found");
             }
         }
     }
-    //TODO:убрать нахуй менюшку
-    private void newQuestion(long chatId) {
-        sendMessage(chatId, "Введите ваш вопрос:");
-        if (updateUserState(chatId, ChatState.NEW_QUESTION) == 1) {
 
-            //TODO:тут должен бвть код для ожидания текта вопроса и добавления его в бд, спросить Вадима
-            sendMessage(chatId, "Ваш вопрос удачно сохранен!");
+
+    private void handleDefaultState(long chatId, String messageText, Update update) {
+        switch (messageText) {
+            case "Start":
+            case "/start":
+                registerUser(update.getMessage());
+                startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
+                break;
+            case "/help":
+            case "Help":
+                sendMessage(chatId, HELP_TEXT);
+                break;
+            case "/new":
+            case "New":
+                updateUserState(chatId, ChatState.NEW_QUESTION);
+                sendMessage(chatId, "Введите ваш вопрос:");
+                break;
+            default:
+                sendMessage(chatId,"Sorry, there is nothing");
+                break;
         }
+    }
+
+    //TODO:убрать нахуй менюшку
+
+    private void handleNewQuestionState(long chatId, String messageText, Update update) {
+        saveNewQuestion(messageText);
+        sendMessage(chatId, "Ваш вопрос успешно сохранен!");
+        updateUserState(chatId, ChatState.DEFAULT);
+    }
+
+    private void saveNewQuestion(String questionText) {
+        Question question = new Question();
+        question.setQuestionText(questionText);
+        questionRepository.save(question);
+
     }
 
     @Transactional
@@ -162,7 +193,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         return config.getToken();
     }
 
-    private void startCommandRecieved(long chatId, String name) {
+    private void startCommandReceived(long chatId, String name) {
         String answer = "Hi, " + name + ", nice to meet you";
         sendMessage(chatId, answer);
         log.info("Replied to user:" + name);
@@ -171,7 +202,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
     private void printKeyboard(long chatId, SendMessage message) {
 
         Optional<User> userOptional = userRepository.findById(chatId);
-        if (userOptional.get().getState() == ChatState.DEFAULT) {
+        if (userOptional.isPresent() && userOptional.get().getState() == ChatState.DEFAULT) {
             ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
             List<KeyboardRow> keyboardRows = new ArrayList<>();
 
