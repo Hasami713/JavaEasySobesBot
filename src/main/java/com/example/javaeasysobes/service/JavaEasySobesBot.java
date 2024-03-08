@@ -5,6 +5,7 @@ import com.example.javaeasysobes.models.User;
 import com.example.javaeasysobes.repo.QuestionRepository;
 import com.example.javaeasysobes.repo.UserRepository;
 import com.example.javaeasysobes.states.ChatState;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -78,28 +79,39 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 case "Help":
                     sendMessage(chatId, HELP_TEXT);
                     break;
+                case "New":
+                    newQuestion(chatId);
+                    //newAnswer(update.getMessage().getText());
+                    break;
                 case "/question":
                     //sendQuestion(chatId, questionRepository);
-                    break;
-                case "/new":
-                    newQuestion(chatId, "Тут надо поменять текст");
-                    //newAnswer(update.getMessage().getText());
                     break;
                 default:
                     sendMessage(chatId,"Sorry, there is nothing");
             }
         }
     }
+    //TODO:убрать нахуй менюшку
+    private void newQuestion(long chatId) {
+        sendMessage(chatId, "Введите ваш вопрос:");
+        if (updateUserState(chatId, ChatState.NEW_QUESTION) == 1) {
 
-    private void newQuestion(long chatId, String textMessage) {
-//        userRepository.updateStateByChatId(chatId, ChatState.NEW_QUESTION);
-//        Optional<User> userOptional = userRepository.findById(chatId);
-//        sendMessage(chatId, textMessage);
-//        if (userOptional.get().getState() == ChatState.NEW_QUESTION){
-//            sendMessage(chatId, "dsafhjdkjfhd");
-//        }
+            //TODO:тут должен бвть код для ожидания текта вопроса и добавления его в бд, спросить Вадима
+            sendMessage(chatId, "Ваш вопрос удачно сохранен!");
+        }
     }
 
+    @Transactional
+    public int updateUserState(Long chatId, ChatState newState) {
+        Optional<User> userOptional = userRepository.findById(chatId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            user.setState(newState);
+            userRepository.save(user);
+            return 1;
+        }
+        return 0;
+    }
 //    private void sendQuestion(long chatId, QuestionRepository questionRepository) {
 //        int count = userCounter();
 //        Random random = new Random();
