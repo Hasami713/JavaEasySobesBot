@@ -20,14 +20,6 @@ public class Answer {
     private String answerText;
 
     @OneToOne
-    private Question questionId;
+    private Question question;
 
-    @Override
-    public String toString() {
-        return "Answer{" +
-                "id=" + id +
-                ", textAnswer='" + answerText + '\'' +
-                ", textQuwstion=" +  questionId+
-                '}';
-    }
 }

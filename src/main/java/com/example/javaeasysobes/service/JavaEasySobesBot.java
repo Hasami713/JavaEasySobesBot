@@ -1,8 +1,10 @@
 package com.example.javaeasysobes.service;
 
 import com.example.javaeasysobes.config.BotConfig;
+import com.example.javaeasysobes.models.Answer;
 import com.example.javaeasysobes.models.Question;
 import com.example.javaeasysobes.models.User;
+import com.example.javaeasysobes.repo.AnswerRepository;
 import com.example.javaeasysobes.repo.QuestionRepository;
 import com.example.javaeasysobes.repo.UserRepository;
 import com.example.javaeasysobes.states.ChatState;
@@ -24,6 +26,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import javax.swing.event.AncestorEvent;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +42,9 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
 
     @Autowired
     private QuestionRepository questionRepository;
+
+    @Autowired
+    private AnswerRepository answerRepository;
 
     final BotConfig config;
 
@@ -79,12 +85,12 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                         handleDefaultState(chatId, messageText, update);
                         break;
                     case NEW_QUESTION:
-                        // Логика для обработки сообщений при создании нового вопроса
-                        handleNewQuestionState(chatId, messageText, update);
+                        handleNewQuestionState(chatId, messageText);
                         break;
-                    // Другие состояния могут быть добавлены здесь
+                    case NEW_ANSWER:
+                        handleNewAnswerState(chatId, messageText);
+                        break;
                     default:
-                        // Если состояние неизвестно или не обработано
                         sendMessage(chatId, "Unknown state");
                         break;
                 }
@@ -108,8 +114,9 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 break;
             case "/new":
             case "New":
+                //TODO:подумать, как можно получше сделать отправку сообщений о вопросе и ответе
+                sendMessage(chatId, "Введите текст вашего вопроса:");
                 updateUserState(chatId, ChatState.NEW_QUESTION);
-                sendMessage(chatId, "Введите ваш вопрос:");
                 break;
             default:
                 sendMessage(chatId,"Sorry, there is nothing");
@@ -119,15 +126,30 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
 
     //TODO:убрать нахуй менюшку
 
-    private void handleNewQuestionState(long chatId, String messageText, Update update) {
+    private void handleNewQuestionState(long chatId, String messageText) {
         saveNewQuestion(messageText);
         sendMessage(chatId, "Ваш вопрос успешно сохранен!");
+        sendMessage(chatId, "Введите текст вашего ответа:");
+        updateUserState(chatId, ChatState.NEW_ANSWER);
+    }
+
+    private void handleNewAnswerState(long chatId, String messageText) {
+        saveNewAnswer(messageText);
+        sendMessage(chatId, "Ваш ответ успешно сохранен!");
         updateUserState(chatId, ChatState.DEFAULT);
+    }
+
+    private void saveNewAnswer(String answerText) {
+        Answer answer = new Answer();
+        answer.setAnswerText(answerText);
+        answerRepository.save(answer);
     }
 
     private void saveNewQuestion(String questionText) {
         Question question = new Question();
+        Answer answer = new Answer();
         question.setQuestionText(questionText);
+        question.setAnswer(answer);
         questionRepository.save(question);
 
     }

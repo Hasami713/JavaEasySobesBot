@@ -20,15 +20,8 @@ public class Question {
 
     private String questionText;
 
-    @OneToOne
-    private Answer answerId;
 
-    @Override
-    public String toString() {
-        return "Question{" +
-                "id=" + id +
-                ", textQuestion='" + questionText + '\'' +
-                ", textAnswer=" + answerId +
-                '}';
-    }
+    @OneToOne(mappedBy = "question", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Answer answer;
+
 }
