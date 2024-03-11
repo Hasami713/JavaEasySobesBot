@@ -119,7 +119,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 updateUserState(chatId, ChatState.NEW_QUESTION);
                 break;
             default:
-                sendMessage(chatId,"Sorry, there is nothing");
+                sendMessage(chatId, "Sorry, there is nothing");
                 break;
         }
     }
@@ -134,7 +134,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
     }
 
     private void handleNewAnswerState(long chatId, String messageText) {
-        saveNewAnswer(messageText);
+        //saveNewAnswer(messageText);
         sendMessage(chatId, "Ваш ответ успешно сохранен!");
         updateUserState(chatId, ChatState.DEFAULT);
     }
@@ -142,13 +142,16 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
     private void saveNewAnswer(String answerText) {
         Answer answer = new Answer();
         answer.setAnswerText(answerText);
+        //Question question = new Question();
+        //answer.setQuestion(question);
         answerRepository.save(answer);
     }
 
     private void saveNewQuestion(String questionText) {
         Question question = new Question();
-        Answer answer = new Answer();
         question.setQuestionText(questionText);
+        Answer answer = new Answer();
+        answer.setAnswerText("aSAsaSAS");
         question.setAnswer(answer);
         questionRepository.save(question);
 

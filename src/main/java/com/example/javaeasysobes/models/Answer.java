@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.builder.EqualsExclude;
 
 @Builder
 @Data
@@ -19,7 +20,7 @@ public class Answer {
 
     private String answerText;
 
-    @OneToOne
+    @OneToOne(mappedBy = "answer", cascade = CascadeType.ALL)
     private Question question;
 
 }
