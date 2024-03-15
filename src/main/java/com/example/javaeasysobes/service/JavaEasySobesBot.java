@@ -27,11 +27,14 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import javax.swing.event.AncestorEvent;
+import java.lang.ref.ReferenceQueue;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+
+import static com.example.javaeasysobes.states.ChatState.*;
 
 @Slf4j
 @Component
@@ -91,6 +94,9 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                         handleNewAnswerState(chatId, messageText, user);
                         saveNewTask(chatId, user);
                         break;
+                    case SEND_QUESTION:
+                        sendQuestion(chatId);
+                        break;
                     default:
                         sendMessage(chatId, "Unknown state");
                         break;
@@ -117,7 +123,10 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
             case "New":
                 //TODO:подумать, как можно получше сделать отправку сообщений о вопросе и ответе
                 sendMessage(chatId, "Введите текст вашего вопроса:");
-                updateUserState(chatId, ChatState.NEW_QUESTION);
+                updateUserState(chatId, NEW_QUESTION);
+                break;
+            case "Send new question":
+                updateUserState(chatId, SEND_QUESTION);
                 break;
             default:
                 sendMessage(chatId, "Sorry, there is nothing");
@@ -132,7 +141,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         sendMessage(chatId, "Ваш вопрос успешно сохранен!");
         sendMessage(chatId, "Введите текст вашего ответа: ");
         userRepository.save(user);
-        updateUserState(chatId, ChatState.NEW_ANSWER);
+        updateUserState(chatId, NEW_ANSWER);
     }
 
     private void handleNewAnswerState(long chatId, String messageText, User user) {
@@ -149,7 +158,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         answer.setAnswerText(user.getNewAnswer());
         answer.setQuestion(question);
         answerRepository.save(answer);
-        updateUserState(chatId, ChatState.DEFAULT);
+        updateUserState(chatId, DEFAULT);
     }
 
     @Transactional
@@ -164,7 +173,17 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         return 0;
     }
 
-
+    private void sendQuestion(long chatId) {
+        int count = questionCounter();
+        Random random = new Random();
+        long i = random.nextInt(count) + 1;
+        Optional<Question> questionOptional = questionRepository.findById(i);
+        if (questionOptional.isPresent()) {
+            Question question = questionOptional.get();
+            sendMessage(chatId, question.getQuestionText());
+        }
+        updateUserState(chatId, DEFAULT);
+    }
 
     private void registerUser(Message message) {
         if (userRepository.findById(message.getChatId()).isEmpty()) {
@@ -176,7 +195,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
             user.setLastName(chat.getLastName());
             user.setUserName(chat.getUserName());
             user.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
-            user.setState(ChatState.DEFAULT);
+            user.setState(DEFAULT);
             userRepository.save(user);
             log.info("User saved: " + user);
         }
@@ -218,7 +237,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
     private void printKeyboard(long chatId, SendMessage message) {
 
         Optional<User> userOptional = userRepository.findById(chatId);
-        if (userOptional.isPresent() && userOptional.get().getState() == ChatState.DEFAULT) {
+        if (userOptional.isPresent() && userOptional.get().getState() == DEFAULT) {
             ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
             List<KeyboardRow> keyboardRows = new ArrayList<>();
 
@@ -234,20 +253,24 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
             row.add("Help");
             keyboardRows.add(row);
 
+            row = new KeyboardRow();
+            row.add("Send new question");
+            keyboardRows.add(row);
+
             keyboardMarkup.setKeyboard(keyboardRows);
 
             message.setReplyMarkup(keyboardMarkup);
         }
     }
 
-    private int userCounter() {
+    private int questionCounter() {
         String url = "jdbc:postgresql://localhost:5432/postgres";
         String user = "postgres";
         String password = "1";
         try (Connection connection = DriverManager.getConnection(url, user, password)) {
             Statement statement = connection.createStatement();
 
-            String query = "SELECT COUNT(*) AS count FROM user_table";
+            String query = "SELECT COUNT(*) AS count FROM question";
 
             ResultSet resultSet = statement.executeQuery(query);
 
