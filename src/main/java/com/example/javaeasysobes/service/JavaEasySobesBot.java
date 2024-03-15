@@ -85,10 +85,11 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                         handleDefaultState(chatId, messageText, update);
                         break;
                     case NEW_QUESTION:
-                        handleNewQuestionState(chatId, messageText);
+                        handleNewQuestionState(chatId, messageText, user);
                         break;
                     case NEW_ANSWER:
-                        handleNewAnswerState(chatId, messageText);
+                        handleNewAnswerState(chatId, messageText, user);
+                        saveNewTask(chatId, user);
                         break;
                     default:
                         sendMessage(chatId, "Unknown state");
@@ -126,35 +127,29 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
 
     //TODO:убрать нахуй менюшку
 
-    private void handleNewQuestionState(long chatId, String messageText) {
-        saveNewQuestion(messageText);
+    private void handleNewQuestionState(long chatId, String messageText, User user) {
+        user.setNewQuestion(messageText);
         sendMessage(chatId, "Ваш вопрос успешно сохранен!");
-        sendMessage(chatId, "Введите текст вашего ответа:");
+        sendMessage(chatId, "Введите текст вашего ответа: ");
+        userRepository.save(user);
         updateUserState(chatId, ChatState.NEW_ANSWER);
     }
 
-    private void handleNewAnswerState(long chatId, String messageText) {
-        //saveNewAnswer(messageText);
+    private void handleNewAnswerState(long chatId, String messageText, User user) {
+        user.setNewAnswer(messageText);
         sendMessage(chatId, "Ваш ответ успешно сохранен!");
-        updateUserState(chatId, ChatState.DEFAULT);
+        userRepository.save(user);
+
     }
 
-    private void saveNewAnswer(String answerText) {
-        Answer answer = new Answer();
-        answer.setAnswerText(answerText);
-        //Question question = new Question();
-        //answer.setQuestion(question);
-        answerRepository.save(answer);
-    }
-
-    private void saveNewQuestion(String questionText) {
+    private void saveNewTask(long chatId, User user) {
         Question question = new Question();
-        question.setQuestionText(questionText);
+        question.setQuestionText(user.getNewQuestion());
         Answer answer = new Answer();
-        answer.setAnswerText("aSAsaSAS");
-        question.setAnswer(answer);
-        questionRepository.save(question);
-
+        answer.setAnswerText(user.getNewAnswer());
+        answer.setQuestion(question);
+        answerRepository.save(answer);
+        updateUserState(chatId, ChatState.DEFAULT);
     }
 
     @Transactional
@@ -168,11 +163,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         }
         return 0;
     }
-//    private void sendQuestion(long chatId, QuestionRepository questionRepository) {
-//        int count = userCounter();
-//        Random random = new Random();
-//        int i = random.nextInt(count)
-//    }
+
 
 
     private void registerUser(Message message) {

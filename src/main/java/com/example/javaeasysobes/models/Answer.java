@@ -20,7 +20,8 @@ public class Answer {
 
     private String answerText;
 
-    @OneToOne(mappedBy = "answer", cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "question_id")
     private Question question;
 
 }

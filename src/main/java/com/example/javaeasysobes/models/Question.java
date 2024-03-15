@@ -21,8 +21,7 @@ public class Question {
     private String questionText;
 
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "answer_id")
+    @OneToOne(mappedBy = "question", cascade = CascadeType.ALL)
     private Answer answer;
 
 }

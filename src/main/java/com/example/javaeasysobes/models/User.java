@@ -1,6 +1,7 @@
 package com.example.javaeasysobes.models;
 
 import com.example.javaeasysobes.states.ChatState;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +23,9 @@ public class User {
 
     private String userName;
     private Timestamp registeredAt;
+
+    private String newQuestion;
+    private String newAnswer;
 
     @Enumerated(EnumType.STRING)
     private ChatState state;
