@@ -24,7 +24,9 @@ public class User {
     private String userName;
     private Timestamp registeredAt;
 
+    @Column(length = 5000)
     private String newQuestion;
+    @Column(length = 5000)
     private String newAnswer;
 
     private long currentQuestionId;

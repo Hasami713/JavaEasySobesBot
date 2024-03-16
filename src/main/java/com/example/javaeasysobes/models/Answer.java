@@ -18,6 +18,7 @@ public class Answer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 5000)
     private String answerText;
 
     @OneToOne(cascade = CascadeType.ALL)

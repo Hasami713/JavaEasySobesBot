@@ -59,17 +59,6 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
 
     public JavaEasySobesBot(BotConfig config) {
         this.config = config;
-        List<BotCommand> listOfCommand = new ArrayList<>();
-        listOfCommand.add(new BotCommand("/start", "get a welcom message"));
-        listOfCommand.add(new BotCommand("/mydata", "get your data stored"));
-        listOfCommand.add(new BotCommand("/deletedata", "delete my data"));
-        listOfCommand.add(new BotCommand("/help", "info how to use this bot"));
-        listOfCommand.add(new BotCommand("/settings", "change your settings"));
-        try {
-            this.execute(new SetMyCommands(listOfCommand, new BotCommandScopeDefault(), null));
-        } catch (TelegramApiException e) {
-            log.error("Error setting bot's command list: " + e.getMessage());
-        }
     }
 
     @Override
