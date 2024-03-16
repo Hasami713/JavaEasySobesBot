@@ -85,7 +85,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
 
                 switch (state) {
                     case DEFAULT:
-                        handleDefaultState(chatId, messageText, update);
+                        handleDefaultState(chatId, messageText, update, user);
                         break;
                     case NEW_QUESTION:
                         handleNewQuestionState(chatId, messageText, user);
@@ -94,8 +94,8 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                         handleNewAnswerState(chatId, messageText, user);
                         saveNewTask(chatId, user);
                         break;
-                    case SEND_QUESTION:
-                        sendQuestion(chatId);
+                    case SENDED_QUESTION:
+                        sendAnswer(chatId, user);
                         break;
                     default:
                         sendMessage(chatId, "Unknown state");
@@ -108,7 +108,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
     }
 
 
-    private void handleDefaultState(long chatId, String messageText, Update update) {
+    private void handleDefaultState(long chatId, String messageText, Update update, User user) {
         switch (messageText) {
             case "Start":
             case "/start":
@@ -126,7 +126,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 updateUserState(chatId, NEW_QUESTION);
                 break;
             case "Send new question":
-                updateUserState(chatId, SEND_QUESTION);
+                sendQuestion(chatId, user);
                 break;
             default:
                 sendMessage(chatId, "Sorry, there is nothing");
@@ -173,7 +173,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         return 0;
     }
 
-    private void sendQuestion(long chatId) {
+    private void sendQuestion(long chatId, User user) {
         int count = questionCounter();
         Random random = new Random();
         long i = random.nextInt(count) + 1;
@@ -181,8 +181,14 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         if (questionOptional.isPresent()) {
             Question question = questionOptional.get();
             sendMessage(chatId, question.getQuestionText());
+            user.setCurrentQuestionId(i);
+            userRepository.save(user);
         }
         updateUserState(chatId, DEFAULT);
+    }
+
+    private void sendAnswer(long chatId, User user) {
+
     }
 
     private void registerUser(Message message) {

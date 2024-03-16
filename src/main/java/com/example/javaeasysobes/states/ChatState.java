@@ -5,5 +5,5 @@ public enum ChatState {
     NEW_QUESTION,
     NEW_ANSWER,
     NEW_TASK,
-    SEND_QUESTION
+    SENDED_QUESTION
 }

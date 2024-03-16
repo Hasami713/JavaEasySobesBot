@@ -27,6 +27,8 @@ public class User {
     private String newQuestion;
     private String newAnswer;
 
+    private long currentQuestionId;
+
     @Enumerated(EnumType.STRING)
     private ChatState state;
     @Override
