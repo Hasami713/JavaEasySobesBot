@@ -85,6 +85,8 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
 
                 switch (state) {
                     case DEFAULT:
+                        user.setCurrentQuestionId(-1);
+                        userRepository.save(user);
                         handleDefaultState(chatId, messageText, update, user);
                         break;
                     case NEW_QUESTION:
@@ -121,11 +123,10 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 break;
             case "/new":
             case "New":
-                //TODO:подумать, как можно получше сделать отправку сообщений о вопросе и ответе
                 sendMessage(chatId, "Введите текст вашего вопроса:");
                 updateUserState(chatId, NEW_QUESTION);
                 break;
-            case "Send new question":
+            case "Send question":
                 sendQuestion(chatId, user);
                 break;
             default:
@@ -134,7 +135,6 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         }
     }
 
-    //TODO:убрать нахуй менюшку
 
     private void handleNewQuestionState(long chatId, String messageText, User user) {
         user.setNewQuestion(messageText);
@@ -184,11 +184,16 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
             user.setCurrentQuestionId(i);
             userRepository.save(user);
         }
-        updateUserState(chatId, DEFAULT);
+        updateUserState(chatId, SENDED_QUESTION);
     }
 
     private void sendAnswer(long chatId, User user) {
-
+        Optional<Answer> answerOptional = answerRepository.findByQuestionId(user.getCurrentQuestionId());
+        if (answerOptional.isPresent()) {
+            Answer answer = answerOptional.get();
+            sendMessage(chatId, answer.getAnswerText());
+        }
+        updateUserState(chatId, DEFAULT);
     }
 
     private void registerUser(Message message) {
@@ -260,7 +265,11 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
             keyboardRows.add(row);
 
             row = new KeyboardRow();
-            row.add("Send new question");
+            row.add("Send question");
+            keyboardRows.add(row);
+
+            row = new KeyboardRow();
+            row.add("Send answer");
             keyboardRows.add(row);
 
             keyboardMarkup.setKeyboard(keyboardRows);
