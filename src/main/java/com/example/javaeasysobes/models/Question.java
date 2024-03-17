@@ -21,6 +21,8 @@ public class Question {
     @Column(length = 5000)
     private String questionText;
 
+    private Long chatId;
+
 
     @OneToOne(mappedBy = "question", cascade = CascadeType.ALL)
     private Answer answer;

@@ -12,22 +12,15 @@ import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
-import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import javax.swing.event.AncestorEvent;
-import java.lang.ref.ReferenceQueue;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -147,19 +140,18 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         answer.setAnswerText(user.getNewAnswer());
         answer.setQuestion(question);
         answerRepository.save(answer);
-        updateUserState(chatId, DEFAULT);
+        user.setState(DEFAULT);
+        userRepository.save(user);
+
     }
 
-    @Transactional
-    public int updateUserState(Long chatId, ChatState newState) {
+    public void updateUserState(Long chatId, ChatState newState) {
         Optional<User> userOptional = userRepository.findById(chatId);
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             user.setState(newState);
             userRepository.save(user);
-            return 1;
         }
-        return 0;
     }
 
     private void sendQuestion(long chatId, User user) {
@@ -167,22 +159,22 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         Random random = new Random();
         long i = random.nextInt(count) + 1;
         Optional<Question> questionOptional = questionRepository.findById(i);
-        if (questionOptional.isPresent()) {
+        if (questionOptional.isPresent() && user.getState() == DEFAULT) {
             Question question = questionOptional.get();
-            sendMessage(chatId, question.getQuestionText());
+            user.setState(SENDED_QUESTION);
             user.setCurrentQuestionId(i);
             userRepository.save(user);
+            sendMessage(chatId, question.getQuestionText());
         }
-        updateUserState(chatId, SENDED_QUESTION);
     }
 
     private void sendAnswer(long chatId, User user) {
         Optional<Answer> answerOptional = answerRepository.findByQuestionId(user.getCurrentQuestionId());
-        if (answerOptional.isPresent()) {
+        if (answerOptional.isPresent() && user.getState() == SENDED_QUESTION) {
             Answer answer = answerOptional.get();
+            updateUserState(chatId, DEFAULT);
             sendMessage(chatId, answer.getAnswerText());
         }
-        updateUserState(chatId, DEFAULT);
     }
 
     private void registerUser(Message message) {
@@ -241,7 +233,9 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
             ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
             List<KeyboardRow> keyboardRows = new ArrayList<>();
 
-            KeyboardRow row = new KeyboardRow();
+            KeyboardRow row;
+
+            row = new KeyboardRow();
             row.add("Start");
             keyboardRows.add(row);
 
@@ -257,6 +251,17 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
             row.add("Send question");
             keyboardRows.add(row);
 
+
+
+            keyboardMarkup.setKeyboard(keyboardRows);
+
+            message.setReplyMarkup(keyboardMarkup);
+
+        } else if (userOptional.isPresent() && userOptional.get().getState() == SENDED_QUESTION) {
+            ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+            List<KeyboardRow> keyboardRows = new ArrayList<>();
+
+            KeyboardRow row;
             row = new KeyboardRow();
             row.add("Send answer");
             keyboardRows.add(row);

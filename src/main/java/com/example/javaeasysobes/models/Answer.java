@@ -21,6 +21,8 @@ public class Answer {
     @Column(length = 5000)
     private String answerText;
 
+    private Long chatId;
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "question_id")
     private Question question;
