@@ -83,7 +83,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 break;
             case NEW_ANSWER:
                 handleNewAnswerState(chatId, messageText, user);
-                saveNewTask(user);
+                saveNewTask(user, chatId);
                 break;
             case SENDED_QUESTION:
                 sendAnswer(chatId, user);
@@ -135,12 +135,14 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         sendMessage(chatId, "Ваш ответ успешно сохранен!");
     }
 
-    private void saveNewTask(User user) {
+    private void saveNewTask(User user, Long chatId) {
         Question question = new Question();
         question.setQuestionText(user.getNewQuestion());
+        question.setChatId(chatId);
         Answer answer = new Answer();
         answer.setAnswerText(user.getNewAnswer());
         answer.setQuestion(question);
+        answer.setChatId(chatId);
         answerRepository.save(answer);
         user.setState(DEFAULT);
         userRepository.save(user);
