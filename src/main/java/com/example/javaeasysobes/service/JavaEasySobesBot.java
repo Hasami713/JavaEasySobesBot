@@ -44,11 +44,15 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
 
     final BotConfig config;
 
-    static final String HELP_TEXT = "This bot is created for fucking your mother!\n\n"
-            + "There tou can see otner command of this bot, bitch:\n\n"
-            + "Type /start to welcome message\n\n"
-            + "Type /mydata to see data stored about yourself\n\n"
-            + "Type /help to see this messge again, little idiot!";
+
+    private final String HELP_TEXT = "New - добавление нового вопроса и нового ответа.\n" +
+                                    "Send question - для получения рандомного вопроса из списка.\n" +
+                                    "Если у вас возникла ошибка, пишите сюда: https://t.me/Hasami713";
+    private final String  WARNING_TEXT = "Привет, я - разработчик этого бота. \n\n" +
+            "Вижу, что ты хочешь добавить свой вопрос и свой ответ в список этого бота, однако, в целях безопасности,\n" +
+            "я оставил эту возможность только для себя. Ты можешь протестировать функционал этой кнопки,\n" +
+            "но твой вопрос, к сожалению, никуда не сохранится(( \n\n" +
+            "Если все же очень хочешь, чтобы я добавил твой вопрос и твой ответ в спиок, то напиши сюда: https://t.me/Hasami713";
 
     public JavaEasySobesBot(BotConfig config) {
         this.config = config;
@@ -66,7 +70,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 ChatState state = user.getState();
                 checkState(state, user, chatId, messageText, update);
             } else {
-                sendMessage(chatId, "User not found");
+                sendMessage(chatId, "Пользователь не найден");
             }
         }
     }
@@ -99,7 +103,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
             case "Start":
             case "/start":
                 registerUser(update.getMessage());
-                startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
+                handleStartCommand(chatId, update.getMessage().getChat().getFirstName());
                 break;
             case "/help":
             case "Help":
@@ -107,6 +111,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 break;
             case "/new":
             case "New":
+                sendMessage(chatId, WARNING_TEXT);
                 sendMessage(chatId, "Введите текст вашего вопроса:");
                 user.setState(NEW_QUESTION);
                 userRepository.save(user);
@@ -115,40 +120,40 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 sendQuestion(chatId, user);
                 break;
             default:
-                sendMessage(chatId, "Sorry, there is nothing");
+                sendMessage(chatId, "Неизвестная команда");
                 break;
         }
     }
 
 
     private void handleNewQuestionState(Long chatId, String messageText, User user) {
-        user.setNewQuestion(messageText);
-        sendMessage(chatId, "Ваш вопрос успешно сохранен!");
-        user.setState(NEW_ANSWER);
-        userRepository.save(user);
-        sendMessage(chatId, "Введите текст вашего ответа: ");
+            user.setNewQuestion(messageText);
+            sendMessage(chatId, "Ваш вопрос успешно сохранен!");
+            user.setState(NEW_ANSWER);
+            userRepository.save(user);
+            sendMessage(chatId, "Введите текст вашего ответа: ");
     }
 
     private void handleNewAnswerState(Long chatId, String messageText, User user) {
-        user.setNewAnswer(messageText);
-        userRepository.save(user);
-        sendMessage(chatId, "Ваш ответ успешно сохранен!");
+            user.setNewAnswer(messageText);
+            userRepository.save(user);
+            sendMessage(chatId, "Ваш ответ успешно сохранен!");
     }
 
     private void saveNewTask(User user, Long chatId) {
-        Question question = new Question();
-        question.setQuestionText(user.getNewQuestion());
-        question.setChatId(chatId);
-        Answer answer = new Answer();
-        answer.setAnswerText(user.getNewAnswer());
-        answer.setQuestion(question);
-        answer.setChatId(chatId);
-        answerRepository.save(answer);
+        if (user.getUserName().equals("Hasami713")) {
+            Question question = new Question();
+            question.setQuestionText(user.getNewQuestion());
+            question.setChatId(chatId);
+            Answer answer = new Answer();
+            answer.setAnswerText(user.getNewAnswer());
+            answer.setQuestion(question);
+            answer.setChatId(chatId);
+            answerRepository.save(answer);
+        }
         user.setState(DEFAULT);
         userRepository.save(user);
-
     }
-
 
 
     private void sendQuestion(Long chatId, User user) {
@@ -218,8 +223,12 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
         return config.getToken();
     }
 
-    private void startCommandReceived(Long chatId, String name) {
-        String answer = "Hi, " + name + ", nice to meet you";
+    private void handleStartCommand(Long chatId, String name) {
+        String answer = "Привет, " + name + "! \n" +
+                "Этот бот предназначен для подготовки к вопросам на собеседовании.\n" +
+                "Нажми Send question для получения рандомного вопроса. \n" +
+                "Нажми New для добавления нового вопроса и нового ответа.\n" +
+                "Нажми Help, если нужна помощь.но твой вопрос, к сожалению, никуда не сохранится((";
         sendMessage(chatId, answer);
         log.info("Replied to user:" + name);
     }
@@ -235,21 +244,15 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
 
             row = new KeyboardRow();
             row.add("Start");
+
+            row.add("Send question");
             keyboardRows.add(row);
 
             row = new KeyboardRow();
             row.add("New");
-            keyboardRows.add(row);
 
-            row = new KeyboardRow();
             row.add("Help");
             keyboardRows.add(row);
-
-            row = new KeyboardRow();
-            row.add("Send question");
-            keyboardRows.add(row);
-
-
 
             keyboardMarkup.setKeyboard(keyboardRows);
 
