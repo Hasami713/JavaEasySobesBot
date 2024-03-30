@@ -224,7 +224,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
     }
 
     private void handleStartCommand(Long chatId, String name) {
-        String answer = "Привет           , " + name + "! \n" +
+        String answer = "Привет, " + name + "! \n" +
                 "Этот бот предназначен для подготовки к вопросам на собеседовании.\n" +
                 "Нажми Send question для получения рандомного вопроса. \n" +
                 "Нажми New для добавления нового вопроса и нового ответа.\n" +
