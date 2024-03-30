@@ -228,7 +228,7 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 "Этот бот предназначен для подготовки к вопросам на собеседовании.\n" +
                 "Нажми Send question для получения рандомного вопроса. \n" +
                 "Нажми New для добавления нового вопроса и нового ответа.\n" +
-                "Нажми Help, если нужна помощь.но твой вопрос, к сожалению, никуда не сохранится((";
+                "Нажми Help, если нужна помощь.";
         sendMessage(chatId, answer);
         log.info("Replied to user:" + name);
     }
