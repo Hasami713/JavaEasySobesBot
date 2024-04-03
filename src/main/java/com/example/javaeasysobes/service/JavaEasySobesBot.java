@@ -46,9 +46,9 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
 
 
     private final String HELP_TEXT = "New - добавление нового вопроса и нового ответа.\n" +
-                                    "Send question - для получения рандомного вопроса из списка.\n" +
-                                    "Если у вас возникла ошибка, пишите сюда: https://t.me/Hasami713";
-    private final String  WARNING_TEXT = "Привет, я - разработчик этого бота. \n\n" +
+            "Send question - для получения рандомного вопроса из списка.\n" +
+            "Если у вас возникла ошибка, пишите сюда: https://t.me/Hasami713";
+    private final String WARNING_TEXT = "Привет, я - разработчик этого бота. \n\n" +
             "Вижу, что ты хочешь добавить свой вопрос и свой ответ в список этого бота, однако, в целях безопасности,\n" +
             "я оставил эту возможность только для себя. Ты можешь протестировать функционал этой кнопки,\n" +
             "но твой вопрос, к сожалению, никуда не сохранится(( \n\n" +
@@ -110,6 +110,8 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
                 sendMessage(chatId, HELP_TEXT);
                 break;
             case "/new":
+            case "new":
+            case "n":
             case "New":
                 sendMessage(chatId, WARNING_TEXT);
                 sendMessage(chatId, "Введите текст вашего вопроса:");
@@ -127,17 +129,17 @@ public class JavaEasySobesBot extends TelegramLongPollingBot {
 
 
     private void handleNewQuestionState(Long chatId, String messageText, User user) {
-            user.setNewQuestion(messageText);
-            sendMessage(chatId, "Ваш вопрос успешно сохранен!");
-            user.setState(NEW_ANSWER);
-            userRepository.save(user);
-            sendMessage(chatId, "Введите текст вашего ответа: ");
+        user.setNewQuestion(messageText);
+        sendMessage(chatId, "Ваш вопрос успешно сохранен!");
+        user.setState(NEW_ANSWER);
+        userRepository.save(user);
+        sendMessage(chatId, "Введите текст вашего ответа: ");
     }
 
     private void handleNewAnswerState(Long chatId, String messageText, User user) {
-            user.setNewAnswer(messageText);
-            userRepository.save(user);
-            sendMessage(chatId, "Ваш ответ успешно сохранен!");
+        user.setNewAnswer(messageText);
+        userRepository.save(user);
+        sendMessage(chatId, "Ваш ответ успешно сохранен!");
     }
 
     private void saveNewTask(User user, Long chatId) {
